@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\Program Files\kompose\kompose.exe convert
+    kompose.version: 1.34.0 (cbf2835db)
+  labels:
+    io.kompose.service: borrowservice
+  name: borrowservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: borrowservice
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\Program Files\kompose\kompose.exe convert
+        kompose.version: 1.34.0 (cbf2835db)
+      labels:
+        io.kompose.service: borrowservice
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_DB
+                  name: env
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_HOST
+                  name: env
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: env
+            - name: POSTGRES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PORT
+                  name: env
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_USER
+                  name: env
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PASS
+              valueFrom:
+                configMapKeyRef:
+                  key: RABBITMQ_PASS
+                  name: env
+            - name: RABBITMQ_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: RABBITMQ_USER
+                  name: env
+          image: ramishar/borrowservice:latest
+          name: borrowservice
+          ports:
+            - containerPort: 5007
+              protocol: TCP
+      restartPolicy: Always

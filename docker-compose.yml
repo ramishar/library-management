@@ -1,0 +1,100 @@
+services:
+  userservice:
+    build: ./UserService
+    image: ramishar/userservice:latest
+    container_name: userservice
+    ports:
+      - "5002:5002"
+    networks:
+      - library_network
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: $(POSTGRES_HOST)
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+
+  bookservice:
+    build: ./BookService
+    image: ramishar/bookservice:latest
+    container_name: bookservice
+    ports:
+      - "5006:5006"
+    networks:
+      - library_network
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: $(POSTGRES_HOST)
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+
+  database:
+    image: postgres
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: $(POSTGRES_USER)
+      POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+      POSTGRES_DB: $(POSTGRES_DB)
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - library_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-rc-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    networks:
+      - library_network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  borrowservice:
+    build: ./BorrowService
+    image: ramishar/borrowservice:latest
+    container_name: borrowservice
+    ports:
+      - "5007:5007"
+    networks:
+      - library_network
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: $(POSTGRES_HOST)
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  db_data:
+
+networks:
+  library_network:
+    driver: bridge
